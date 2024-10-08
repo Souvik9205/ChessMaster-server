@@ -7,14 +7,12 @@ class Game {
     this.moveCount = 0;
   }
 
-  // Add player to the game
   addPlayer(playerId, socket) {
     if (Object.keys(this.players).length < 2) {
       this.players[playerId] = socket;
-      // Notify both players of the new player's color
-      this.notifyPlayers(`${playerId} joined the game.`);
+      this.notifyPlayers(`${playerId}`);
       if (Object.keys(this.players).length === 2) {
-        this.startGame(); // Start the game once 2 players are present
+        this.startGame();
       }
     } else {
       socket.send(JSON.stringify({ type: "ERROR", message: "Room is full." }));

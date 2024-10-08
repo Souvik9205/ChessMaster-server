@@ -28,7 +28,7 @@ class RoomManager {
         if (success) {
           socket.send(
             JSON.stringify({
-              type: "NOTIFICATION",
+              type: "USERNAME",
               message: `Welcome, ${username}`,
             })
           );
@@ -68,8 +68,8 @@ class RoomManager {
     }
 
     if (message.type === "JOIN_ROOM") {
-      const { roomId } = message;
-      this.joinRoom(username, roomId, socket);
+      const { id } = message;
+      this.joinRoom(username, id, socket);
     }
 
     if (message.type === "MOVE") {
