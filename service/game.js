@@ -2,9 +2,9 @@ const { Chess } = require("chess.js");
 
 class Game {
   constructor(player1Id) {
-    this.players = { [player1Id]: null }; // Player ID to socket mapping
-    this.board = new Chess(); // Initialize the chess board
-    this.moveCount = 0; // Move counter
+    this.players = { [player1Id]: null };
+    this.board = new Chess();
+    this.moveCount = 0;
   }
 
   // Add player to the game
@@ -43,12 +43,10 @@ class Game {
       socket.send(JSON.stringify({ type: "INIT_GAME", color }));
     });
 
-    // Store player ids for move validation
     this.player1Id = playerIds[0];
     this.player2Id = playerIds[1];
   }
 
-  // Notify players with a message
   notifyPlayers(message) {
     Object.values(this.players).forEach((socket) => {
       if (socket) {
@@ -72,7 +70,6 @@ class Game {
   makeMove(playerId, move) {
     const socket = this.players[playerId];
 
-    // Check if the game is already over (checkmate or stalemate)
     if (this.board.isGameOver()) {
       socket.send(
         JSON.stringify({ type: "ERROR", message: "Game is already over." })
@@ -80,7 +77,6 @@ class Game {
       return;
     }
 
-    // Ensure it's the correct player's turn
     if (
       (this.moveCount % 2 === 0 && playerId !== this.player1Id) ||
       (this.moveCount % 2 === 1 && playerId !== this.player2Id)
@@ -92,16 +88,13 @@ class Game {
     }
 
     try {
-      // Attempt to make the move using chess.js
       const result = this.board.move(move);
 
       if (!result) {
         throw new Error("Invalid move");
       }
 
-      // If the move was successful, check game over conditions
       if (this.board.isCheckmate()) {
-        // Notify both players of checkmate
         Object.values(this.players).forEach((playerSocket) => {
           playerSocket.send(
             JSON.stringify({
@@ -115,7 +108,6 @@ class Game {
         });
         return;
       } else if (this.board.isDraw() || this.board.isStalemate()) {
-        // Check for a draw or stalemate and notify players
         Object.values(this.players).forEach((playerSocket) => {
           playerSocket.send(
             JSON.stringify({
@@ -130,12 +122,12 @@ class Game {
         return;
       }
 
-      // If not game over, continue sending the move to the opponent
-      const opponentId =
-        playerId === this.player1Id ? this.player2Id : this.player1Id;
-      this.players[opponentId].send(
-        JSON.stringify({ type: "MOVE", payload: move })
-      );
+      const senderId =
+        playerId === this.player1Id ? this.player1Id : this.player2Id;
+      // this.players[opponentId].send(
+      //   JSON.stringify({ type: "MOVE", payload: move })
+      // );
+      this.notifyMove(senderId, move);
 
       this.moveCount++;
     } catch (e) {
@@ -144,18 +136,16 @@ class Game {
     }
   }
 
-  // Check if it's the player's turn
   isPlayerTurn(playerId) {
     const currentPlayerId =
       this.moveCount % 2 === 0 ? this.player1Id : this.player2Id;
     return playerId === currentPlayerId;
   }
 
-  // Notify players of a move
   notifyMove(playerId, move) {
     Object.values(this.players).forEach((socket) => {
-      if (socket && socket !== this.players[playerId]) {
-        socket.send(JSON.stringify({ type: "MOVE", move }));
+      if (socket) {
+        socket.send(JSON.stringify({ type: "MOVE", user: playerId, move }));
       }
     });
   }

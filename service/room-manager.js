@@ -2,52 +2,81 @@ const Game = require("./game");
 
 class RoomManager {
   constructor() {
-    this.games = {}; // Room ID -> Game
-    this.users = {}; // User ID -> WebSocket
+    this.games = {};
+    this.users = {}; // Will now map `username` -> { socket, username }
   }
 
-  // Add a user and assign unique ID
   addUser(socket) {
-    const userId = this.generateUserId();
-    this.users[userId] = socket;
-    this.addHandler(socket, userId);
+    this.addHandler(socket);
   }
 
   removeUser(socket) {
-    const userId = this.getUserIdBySocket(socket);
-    if (userId) {
-      delete this.users[userId]; // Remove user from users list
-      this.handleDisconnect(userId); // Notify others of disconnection
+    const username = this.getUserIdBySocket(socket); // Now username is the ID
+    if (username) {
+      delete this.users[username];
+      this.handleDisconnect(username);
     }
   }
 
-  // Add message handlers for each socket
-  addHandler(socket, userId) {
+  addHandler(socket) {
     socket.on("message", (data) => {
       const message = JSON.parse(data.toString());
-      this.handleMessage(socket, userId, message);
+
+      if (message.type === "SET_USERNAME") {
+        const username = message.username;
+        const success = this.setUsername(socket, username);
+        if (success) {
+          socket.send(
+            JSON.stringify({
+              type: "NOTIFICATION",
+              message: `Welcome, ${username}`,
+            })
+          );
+        } else {
+          socket.send(
+            JSON.stringify({
+              type: "ERROR",
+              message: "Username already in use.",
+            })
+          );
+        }
+        return;
+      }
+
+      const username = this.getUserIdBySocket(socket);
+      if (username) {
+        this.handleMessage(socket, username, message);
+      }
     });
   }
 
-  handleMessage(socket, userId, message) {
-    // Handle room creation
+  setUsername(socket, username) {
+    if (this.users[username]) {
+      // Username already taken
+      return false;
+    }
+
+    // Store the user with username as the key
+    this.users[username] = { socket, username };
+    return true;
+  }
+
+  handleMessage(socket, username, message) {
     if (message.type === "CREATE_ROOM") {
-      const roomId = this.createRoom(userId);
+      const roomId = this.createRoom(username);
       socket.send(JSON.stringify({ type: "ROOM_CREATED", roomId }));
     }
 
-    // Handle room joining
     if (message.type === "JOIN_ROOM") {
       const { roomId } = message;
-      this.joinRoom(userId, roomId, socket);
+      this.joinRoom(username, roomId, socket);
     }
 
-    // Handle player moves
     if (message.type === "MOVE") {
       const { roomId, move } = message;
       const game = this.games[roomId];
       if (game) {
-        game.makeMove(userId, move);
+        game.makeMove(username, move);
       } else {
         socket.send(
           JSON.stringify({ type: "ERROR", message: "Room does not exist." })
@@ -57,17 +86,17 @@ class RoomManager {
   }
 
   // Create a room
-  createRoom(userId) {
-    const roomId = this.generateRoomId(); // Generate unique room ID
-    this.games[roomId] = new Game(userId); // Create new game instance
+  createRoom(username) {
+    const roomId = this.generateRoomId();
+    this.games[roomId] = new Game(username); // Use username as the player ID
     return roomId;
   }
 
   // Join an existing room
-  joinRoom(userId, roomId, socket) {
+  joinRoom(username, roomId, socket) {
     const game = this.games[roomId];
     if (game) {
-      game.addPlayer(userId, socket); // Add user to the game
+      game.addPlayer(username, socket);
     } else {
       socket.send(
         JSON.stringify({ type: "ERROR", message: "Room does not exist." })
@@ -76,23 +105,17 @@ class RoomManager {
   }
 
   // Handle disconnect notifications
-  handleDisconnect(userId) {
+  handleDisconnect(username) {
     Object.values(this.games).forEach((game) => {
-      if (game.hasPlayer(userId)) {
-        game.notifyPlayers(`${userId} has disconnected.`);
-        game.removePlayer(userId);
+      if (game.hasPlayer(username)) {
+        game.notifyPlayers(`${username} has disconnected.`);
+        game.removePlayer(username);
 
-        // Check if the game is empty and remove it
         if (Object.keys(game.players).length === 0) {
-          delete this.games[game.id]; // Optionally assign a unique ID for each game
+          delete this.games[game.id];
         }
       }
     });
-  }
-
-  // Generate a unique user ID
-  generateUserId() {
-    return `user-${Date.now()}-${Math.random().toString(5).substring(2)}`;
   }
 
   // Generate a unique room ID
@@ -100,9 +123,11 @@ class RoomManager {
     return Math.floor(Math.random() * 10000);
   }
 
-  // Get user ID by socket
+  // Get user ID (username) by socket
   getUserIdBySocket(socket) {
-    return Object.keys(this.users).find((key) => this.users[key] === socket);
+    return Object.keys(this.users).find(
+      (username) => this.users[username].socket === socket
+    );
   }
 }
 
