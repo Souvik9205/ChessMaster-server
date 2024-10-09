@@ -15,16 +15,6 @@ model User {
   matches   Int      @default(0)
   wins      Int      @default(0) 
   draws     Int      @default(0) 
-  winrate   Float    @default(0.0)
 
   createdAt DateTime @default(now())
-}
-
-model Game {
-  id         String   @id @default(uuid()) @db.Uuid
-  player1    String   
-  player2    String?  
-  winnerId   String?  
-  createdAt  DateTime @default(now()) 
-  moves      String[] 
 }

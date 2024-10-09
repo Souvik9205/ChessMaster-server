@@ -102,7 +102,8 @@ class Game {
             JSON.stringify({
               type: "GAME_OVER",
               payload: {
-                winner: playerId === this.player1Id ? "white" : "black",
+                winner:
+                  playerId === this.player1Id ? this.player1Id : this.player2Id,
                 reason: "checkmate",
               },
             })
