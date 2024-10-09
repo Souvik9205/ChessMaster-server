@@ -9,7 +9,6 @@ router.post("/auth", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Check if the user already exists
     const existingUser = await prisma.user.findUnique({
       where: { username },
     });
@@ -28,11 +27,9 @@ router.post("/auth", async (req, res) => {
         });
       } else {
         // Password does not match
-        res
-          .status(401)
-          .json({
-            error: "Invalid credentials, or the username is already taken",
-          });
+        res.status(401).json({
+          error: "Invalid credentials, or the username is already taken",
+        });
       }
     } else {
       // User does not exist, create a new user
