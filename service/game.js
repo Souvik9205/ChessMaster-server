@@ -48,6 +48,13 @@ class Game {
       }
     });
   }
+  disconnectPlayer(message) {
+    Object.values(this.players).forEach((socket) => {
+      if (socket) {
+        socket.send(JSON.stringify({ type: "DISCONNECT", message }));
+      }
+    });
+  }
 
   endGame() {
     Object.values(this.players).forEach((socket) => {
@@ -85,6 +92,9 @@ class Game {
       if (!result) {
         throw new Error("Invalid move");
       }
+      const senderId =
+        playerId === this.player1Id ? this.player1Id : this.player2Id;
+      this.notifyMove(senderId, move);
 
       if (this.board.isCheckmate()) {
         Object.values(this.players).forEach((playerSocket) => {
@@ -113,13 +123,6 @@ class Game {
         });
         return;
       }
-
-      const senderId =
-        playerId === this.player1Id ? this.player1Id : this.player2Id;
-      // this.players[opponentId].send(
-      //   JSON.stringify({ type: "MOVE", payload: move })
-      // );
-      this.notifyMove(senderId, move);
 
       this.moveCount++;
     } catch (e) {

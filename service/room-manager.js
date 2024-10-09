@@ -100,7 +100,7 @@ class RoomManager {
   handleDisconnect(username) {
     Object.values(this.games).forEach((game) => {
       if (game.hasPlayer(username)) {
-        game.notifyPlayers(`${username} has disconnected.`);
+        game.disconnectPlayer(`${username} has disconnected.`);
         game.removePlayer(username);
 
         if (Object.keys(game.players).length === 0) {
