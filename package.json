@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node main.js"
+    "start-http": "node server.js",
+    "start-wss": "node wsserver.js"
   },
   "author": "",
   "license": "ISC",

@@ -19,21 +19,17 @@ class Game {
     }
   }
 
-  // Remove a player from the game
   removePlayer(playerId) {
     delete this.players[playerId];
     if (Object.keys(this.players).length === 0) {
-      // Game ends if no players are left
       this.endGame();
     }
   }
 
-  // Check if a player is in the game
   hasPlayer(playerId) {
     return this.players.hasOwnProperty(playerId);
   }
 
-  // Start the game and notify players
   startGame() {
     const playerIds = Object.keys(this.players);
     Object.values(this.players).forEach((socket, index) => {
@@ -53,7 +49,6 @@ class Game {
     });
   }
 
-  // End the game logic
   endGame() {
     Object.values(this.players).forEach((socket) => {
       if (socket) {
@@ -64,7 +59,6 @@ class Game {
     });
   }
 
-  // Make a move
   makeMove(playerId, move) {
     const socket = this.players[playerId];
 

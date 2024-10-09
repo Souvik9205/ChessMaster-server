@@ -3,21 +3,19 @@ const Game = require("./game");
 class RoomManager {
   constructor() {
     this.games = {};
-    this.users = {}; // Will now map `username` -> { socket, username }
+    this.users = {};
   }
 
   addUser(socket) {
     this.addHandler(socket);
   }
-
   removeUser(socket) {
-    const username = this.getUserIdBySocket(socket); // Now username is the ID
+    const username = this.getUserIdBySocket(socket);
     if (username) {
       delete this.users[username];
       this.handleDisconnect(username);
     }
   }
-
   addHandler(socket) {
     socket.on("message", (data) => {
       const message = JSON.parse(data.toString());
@@ -52,11 +50,8 @@ class RoomManager {
 
   setUsername(socket, username) {
     if (this.users[username]) {
-      // Username already taken
       return false;
     }
-
-    // Store the user with username as the key
     this.users[username] = { socket, username };
     return true;
   }
@@ -85,14 +80,12 @@ class RoomManager {
     }
   }
 
-  // Create a room
   createRoom(username) {
     const roomId = this.generateRoomId();
-    this.games[roomId] = new Game(username); // Use username as the player ID
+    this.games[roomId] = new Game(username);
     return roomId;
   }
 
-  // Join an existing room
   joinRoom(username, roomId, socket) {
     const game = this.games[roomId];
     if (game) {
@@ -104,7 +97,6 @@ class RoomManager {
     }
   }
 
-  // Handle disconnect notifications
   handleDisconnect(username) {
     Object.values(this.games).forEach((game) => {
       if (game.hasPlayer(username)) {
@@ -118,12 +110,10 @@ class RoomManager {
     });
   }
 
-  // Generate a unique room ID
   generateRoomId() {
     return Math.floor(Math.random() * 10000);
   }
 
-  // Get user ID (username) by socket
   getUserIdBySocket(socket) {
     return Object.keys(this.users).find(
       (username) => this.users[username].socket === socket
