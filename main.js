@@ -8,8 +8,8 @@ const cors = require("cors");
 
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 8080;
-const wss = new WebSocketServer({ port: 8081 });
+const port = 8080;
+const wss = new WebSocketServer({ port: process.env.PORT });
 const roomManager = new RoomManager();
 
 app.use(cors());
